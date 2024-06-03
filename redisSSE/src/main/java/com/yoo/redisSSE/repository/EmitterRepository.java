@@ -5,6 +5,7 @@ import org.springframework.stereotype.Repository;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
 @Repository
@@ -15,16 +16,21 @@ public class EmitterRepository {
      * - 추후 확정성을 위해 Reids로 변경하자
      * -  thread-safe를 위해 HashMap이 아닌 ConcurrentHashMap 사용
      * **/
-    private final Map<String, SseEmitter> emitters = new ConcurrentHashMap<>();
+    private final Map<String, SseEmitter> sseEmitter = new ConcurrentHashMap<>();
 
     /**
      * 주어진 아이디와 이미터를 저장
      *
      * @param accountId    - 사용자 아이디.
-     * @param emitter       - 이벤트 Emitter.
+     * @param sseEmitter       - 이벤트 sseEmitter.
      */
-    public void save(String accountId, SseEmitter emitter) {
-        emitters.put(accountId, emitter);
+    public SseEmitter save(String accountId, SseEmitter sseEmitter) {
+        this.sseEmitter.put(accountId, sseEmitter);
+        return sseEmitter;
+    }
+
+    public Optional<SseEmitter> findById(String memberId) {
+        return Optional.ofNullable(this.sseEmitter.get(memberId));
     }
 
     /**
@@ -33,7 +39,7 @@ public class EmitterRepository {
      * @param accountId - 사용자 아이디.
      */
     public void deleteById(String accountId) {
-        emitters.remove(accountId);
+        this.sseEmitter.remove(accountId);
     }
 
     /**
@@ -43,6 +49,6 @@ public class EmitterRepository {
      * @return SseEmitter   - 이벤트 Emitter.
      */
     public SseEmitter get(String accountId) {
-        return emitters.get(accountId);
+        return this.sseEmitter.get(accountId);
     }
 }
