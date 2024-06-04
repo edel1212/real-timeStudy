@@ -1,6 +1,7 @@
 package com.yoo.redisSSE.controller;
 
 import com.yoo.redisSSE.service.NotificationService;
+import com.yoo.redisSSE.service.NotificationServiceImpl;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
@@ -13,7 +14,8 @@ import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 @RequiredArgsConstructor
 public class NotificationController {
 
-    private final NotificationService notificationService;
+    //private final NotificationService notificationService;
+    private final NotificationServiceImpl notificationService;
 
     @GetMapping(value = "/sub", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public SseEmitter subscribe(HttpServletRequest request, String accountId){
@@ -25,6 +27,6 @@ public class NotificationController {
 
     @PostMapping(value = "/send-data", produces = MediaType.APPLICATION_FORM_URLENCODED_VALUE)
     public void sendData(String accountId, String message) {
-        notificationService.notify(accountId, message);
+        notificationService.sendNotification(accountId, message);
     }
 }

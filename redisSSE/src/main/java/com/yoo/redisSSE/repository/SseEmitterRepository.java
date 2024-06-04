@@ -1,7 +1,5 @@
 package com.yoo.redisSSE.repository;
 
-import lombok.RequiredArgsConstructor;
-import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Repository;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
@@ -10,8 +8,8 @@ import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
 @Repository
-@RequiredArgsConstructor
-public class EmitterRepository {
+public class SseEmitterRepository {
+
     // thread-safe한 자료구조를 사용한다.
     private final Map<String, SseEmitter> emitters = new ConcurrentHashMap<>();
 
