@@ -16,6 +16,13 @@ dependencies {
 ### Redis 설정
 - #### application.yml
   - 해당 예제에서는 `host, port`만 설정하였으나 계정 정보 및 비밀번호도 설정 가능함
+```properties
+spring:
+  data:
+    redis:
+      host: localhost
+      port: 6379
+``` 
 - #### RedisConfig
   - ℹ️ 중요 포인트
     - Spring - Redis 간 데이터 `직렬화, 역직렬화` 시 사용하는 방식이 다르로 꼭 설정해 줘야한다.
