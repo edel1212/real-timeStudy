@@ -42,6 +42,9 @@ public class RedisConfig {
         return redisTemplate;
     }
 
+    /**
+     * 메시지가 도착하면 등록된 MessageListener를 호출하여 메시지를 처리한다.
+     */
     @Bean
     public RedisMessageListenerContainer redisMessageListenerContainer(RedisConnectionFactory redisConnectionFactory) {
         final RedisMessageListenerContainer redisMessageListenerContainer = new RedisMessageListenerContainer();
