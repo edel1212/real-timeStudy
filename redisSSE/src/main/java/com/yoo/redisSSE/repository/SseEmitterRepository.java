@@ -9,7 +9,6 @@ import java.util.concurrent.ConcurrentHashMap;
 
 @Repository
 public class SseEmitterRepository {
-
     // thread-safe한 자료구조를 사용한다.
     private final Map<String, SseEmitter> emitters = new ConcurrentHashMap<>();
     private Long timeout = 60L * 1000 * 60;

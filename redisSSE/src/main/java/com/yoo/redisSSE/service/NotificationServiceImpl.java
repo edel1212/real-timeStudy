@@ -13,29 +13,28 @@ public class NotificationServiceImpl{
     private final SseEmitterService sseEmitterService;
     private final RedisMessageService redisMessageService;
 
-    // ℹ️ 구독
-    public SseEmitter subscribe(String accountId) {
+    public SseEmitter subscribe(String channel) {
         // 1 . SSE 객체 생성
-        SseEmitter sseEmitter = sseEmitterService.createSseEmitter(accountId);
+        SseEmitter sseEmitter = sseEmitterService.createSseEmitter(channel);
 
         // 2 . 메세지 전송 최초 1회 필수
         NotificationDto data = NotificationDto.builder()
-                .channel(accountId)
-                .message("Create SSE Owner : " + accountId )
+                .channel(channel)
+                .message("Create Channel Id : " + channel )
                 .build();
         sseEmitterService.sendMessage(data, sseEmitter);
 
         // 3 . Redis 구독
-        redisMessageService.subscribe(accountId);
+        redisMessageService.subscribe(channel);
         
         // 4 . SSE 성공 및 실패 처리
         sseEmitter.onTimeout(sseEmitter::complete);
         sseEmitter.onError((e) -> sseEmitter.complete());
         sseEmitter.onCompletion(() -> {
             // Map에 저장된 sseEmitter 삭제
-            sseEmitterService.removeChannel(accountId);
+            sseEmitterService.removeChannel(channel);
             // 구독한 채널 삭제
-            redisMessageService.removeSubscribe(accountId);
+            redisMessageService.removeSubscribe(channel);
         });
         return sseEmitter;
     }

@@ -41,6 +41,7 @@ public class SseEmitterService {
                     .data(data, MediaType.APPLICATION_JSON));
         } catch (IOException | IllegalStateException e) {
             log.error("IOException | IllegalStateException is occurred. ", e);
+            // 에러가 발생할 경우 채널 삭제
             sseEmitterRepository.deleteById(channel);
         } // try - catch
     }
