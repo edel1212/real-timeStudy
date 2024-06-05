@@ -118,9 +118,49 @@ spring:
       private final NotificationServiceImpl notificationService;
   
       @GetMapping(value = "/sub", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
-      public SseEmitter subscribe(String accountId) {
-          return notificationService.subscribe(accountId);
+      public SseEmitter subscribe(String channel){
+        return notificationService.subscribe(channel);
       }
   
   }
+  ```
+
+- Service - 알림 연결 생성 
+  - ℹ️ 중요
+    - `SseEmitter` 생성 시 반드 시 공백이라도 메세지를 한개라도 보내줘야함.
+      - 그렇지 않으면 연결이 성사 되지 않음
+  ```java
+  @Service
+  @Log4j2
+  @RequiredArgsConstructor
+  public class NotificationServiceImpl {
+      private final SseEmitterService sseEmitterService;
+      private final RedisMessageService redisMessageService;
+  
+      public SseEmitter subscribe(String channel) {
+          // 1 . SSE 객체 생성
+          SseEmitter sseEmitter = sseEmitterService.createSseEmitter(channel);
+  
+          // 2 . 메세지 전송 최초 1회 필수
+          NotificationDto data = NotificationDto.builder()
+                  .channel(channel)
+                  .message("Create Channel Id : " + channel)
+                  .build();
+          sseEmitterService.sendMessage(data, sseEmitter);
+  
+          // 3 . Redis 구독
+          redisMessageService.subscribe(channel);
+  
+          // 4 . SSE 성공 및 실패 처리
+          sseEmitter.onTimeout(sseEmitter::complete);
+          sseEmitter.onError((e) -> sseEmitter.complete());
+          sseEmitter.onCompletion(() -> {
+              // Map에 저장된 sseEmitter 삭제
+              sseEmitterService.removeChannel(channel);
+              // 구독한 채널 삭제
+              redisMessageService.removeSubscribe(channel);
+          });
+          return sseEmitter;
+      }
+  }    
   ```
