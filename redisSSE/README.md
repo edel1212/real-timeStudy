@@ -99,4 +99,28 @@ spring:
   
   }
   ```     
-        
+
+### 흐름 코드 - 생성(구독)
+```properties
+# 편의를 위해 Interface를 제외하고 구현하였음
+# 사용된 Redis는 기본 포트를 적용함
+```
+
+- Controller
+  - ℹ️ 중요 
+    - 구독 시 응답 유형은 `SseEmitter`로 반환하며 제공 Header-Type은 `MediaType.TEXT_EVENT_STREAM_VALUE`이다.
+    - `HttpMethod`의 형식은 반드시 Get 방식이어야 한다.
+  ```java
+  @RestController
+  @RequiredArgsConstructor
+  public class NotificationController {
+  
+      private final NotificationServiceImpl notificationService;
+  
+      @GetMapping(value = "/sub", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+      public SseEmitter subscribe(String accountId) {
+          return notificationService.subscribe(accountId);
+      }
+  
+  }
+  ```
