@@ -17,24 +17,22 @@ public class SseEmitterService {
 
     private final SseEmitterRepository sseEmitterRepository;
 
-    public void deleteEmitter(String emitterKey) {
-        sseEmitterRepository.deleteById(emitterKey);
+    public void sendNotificationToClient(NotificationDto notificationDto) {
+        String accountId = notificationDto.getChannel();
+        sseEmitterRepository.findById(accountId)
+                .ifPresent(emitter -> sendMessage(notificationDto, emitter));
     }
 
-    public void sendNotificationToClient(String emitterKey, NotificationDto notificationDto) {
-        sseEmitterRepository.findById(emitterKey)
-                .ifPresent(emitter -> send(notificationDto, emitterKey, emitter));
-    }
-
-    public void send(Object data, String emitterKey, SseEmitter sseEmitter) {
+    public void sendMessage(NotificationDto data, SseEmitter sseEmitter) {
+        log.info("send to client :[{}]",  data);
+        String channel =  data.getChannel();
         try {
-            log.info("send to client {}:[{}]", emitterKey, data);
             sseEmitter.send(SseEmitter.event()
-                    .id(emitterKey)
+                    .id(channel)
                     .data(data, MediaType.APPLICATION_JSON));
         } catch (IOException | IllegalStateException e) {
             log.error("IOException | IllegalStateException is occurred. ", e);
-            sseEmitterRepository.deleteById(emitterKey);
-        }
+            sseEmitterRepository.deleteById(channel);
+        } // try - catch
     }
 }

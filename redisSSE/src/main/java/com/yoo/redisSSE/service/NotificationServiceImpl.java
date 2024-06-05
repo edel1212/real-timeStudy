@@ -25,17 +25,19 @@ public class NotificationServiceImpl{
 
         // 2 . 메세지 전송 최초 1회 필수
         NotificationDto data = NotificationDto.builder()
-                .accountId(accountId)
+                .channel(accountId)
                 .message("Create SSE Owner : " + accountId )
                 .build();
-        this.sendMessage(data, sseEmitter);
+        sseEmitterService.sendMessage(data, sseEmitter);
 
-        redisMessageService.subscribe(accountId); // redis 구독
-
+        // 3 . Redis 구독
+        redisMessageService.subscribe(accountId);
+        
+        // 4 . SSE 성공 및 실패 처리
         sseEmitter.onTimeout(sseEmitter::complete);
         sseEmitter.onError((e) -> sseEmitter.complete());
         sseEmitter.onCompletion(() -> {
-            sseEmitterService.deleteEmitter(accountId);
+            sseEmitterRepository.deleteById(accountId);
             redisMessageService.removeSubscribe(accountId); // 구독한 채널 삭제
         });
         return sseEmitter;
@@ -44,21 +46,7 @@ public class NotificationServiceImpl{
 
     public void sendNotification(String accountId, String message) {
         // redis 이벤트 발행
-        redisMessageService.publish(accountId, NotificationDto.builder().message(message).build());
+        redisMessageService.publish(accountId, NotificationDto.builder().channel(accountId).message(message).build());
     }
-
-    private void sendMessage(NotificationDto data, SseEmitter sseEmitter) {
-        log.info("send to client :[{}]", data);
-        String accountId = data.getAccountId();
-        try {
-            sseEmitter.send(SseEmitter.event()
-                    .id(accountId)
-                    .data(data, MediaType.APPLICATION_JSON));
-        } catch (IOException | IllegalStateException e) {
-            log.error("IOException | IllegalStateException is occurred. ", e);
-            sseEmitterRepository.deleteById(accountId);
-        }// try - catch
-    }
-
 
 }

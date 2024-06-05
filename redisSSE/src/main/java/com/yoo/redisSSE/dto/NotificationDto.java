@@ -11,5 +11,5 @@ import lombok.NoArgsConstructor;
 @Data
 public class NotificationDto {
     private String message;
-    private String accountId;
+    private String channel;
 }
