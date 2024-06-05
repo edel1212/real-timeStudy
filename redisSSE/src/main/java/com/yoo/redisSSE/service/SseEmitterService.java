@@ -17,12 +17,6 @@ public class SseEmitterService {
 
     private final SseEmitterRepository sseEmitterRepository;
 
-    private Long timeout = 60L * 1000 * 60;
-
-    public SseEmitter createEmitter(String emitterKey) {
-        return sseEmitterRepository.save(emitterKey, new SseEmitter(timeout));
-    }
-
     public void deleteEmitter(String emitterKey) {
         sseEmitterRepository.deleteById(emitterKey);
     }
