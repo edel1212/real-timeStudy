@@ -12,8 +12,10 @@ public class SseEmitterRepository {
 
     // thread-safe한 자료구조를 사용한다.
     private final Map<String, SseEmitter> emitters = new ConcurrentHashMap<>();
+    private Long timeout = 60L * 1000 * 60;
 
-    public SseEmitter save(String eventId, SseEmitter sseEmitter) {
+    public SseEmitter save(String eventId) {
+        SseEmitter sseEmitter =  new SseEmitter(timeout);
         emitters.put(eventId, sseEmitter);
         return sseEmitter;
     }
