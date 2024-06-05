@@ -1,14 +1,10 @@
 package com.yoo.redisSSE.service;
 
 import com.yoo.redisSSE.dto.NotificationDto;
-import com.yoo.redisSSE.repository.SseEmitterRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
-import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
-
-import java.io.IOException;
 
 @Service
 @Log4j2
@@ -16,12 +12,11 @@ import java.io.IOException;
 public class NotificationServiceImpl{
     private final SseEmitterService sseEmitterService;
     private final RedisMessageService redisMessageService;
-    private final SseEmitterRepository sseEmitterRepository;
 
     // ℹ️ 구독
     public SseEmitter subscribe(String accountId) {
         // 1 . SSE 객체 생성
-        SseEmitter sseEmitter = sseEmitterRepository.save(accountId);
+        SseEmitter sseEmitter = sseEmitterService.createSseEmitter(accountId);
 
         // 2 . 메세지 전송 최초 1회 필수
         NotificationDto data = NotificationDto.builder()
@@ -37,8 +32,10 @@ public class NotificationServiceImpl{
         sseEmitter.onTimeout(sseEmitter::complete);
         sseEmitter.onError((e) -> sseEmitter.complete());
         sseEmitter.onCompletion(() -> {
-            sseEmitterRepository.deleteById(accountId);
-            redisMessageService.removeSubscribe(accountId); // 구독한 채널 삭제
+            // Map에 저장된 sseEmitter 삭제
+            sseEmitterService.removeChannel(accountId);
+            // 구독한 채널 삭제
+            redisMessageService.removeSubscribe(accountId);
         });
         return sseEmitter;
     }

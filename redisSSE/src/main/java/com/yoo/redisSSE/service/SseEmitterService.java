@@ -17,6 +17,14 @@ public class SseEmitterService {
 
     private final SseEmitterRepository sseEmitterRepository;
 
+    public SseEmitter createSseEmitter(String channel){
+        return sseEmitterRepository.save(channel);
+    }
+
+    public void removeChannel(String channel){
+        sseEmitterRepository.deleteById(channel);
+    }
+
     public void sendNotificationToClient(NotificationDto notificationDto) {
         String accountId = notificationDto.getChannel();
         sseEmitterRepository.findById(accountId)
@@ -29,6 +37,7 @@ public class SseEmitterService {
         try {
             sseEmitter.send(SseEmitter.event()
                     .id(channel)
+                    .name("sse")
                     .data(data, MediaType.APPLICATION_JSON));
         } catch (IOException | IllegalStateException e) {
             log.error("IOException | IllegalStateException is occurred. ", e);
