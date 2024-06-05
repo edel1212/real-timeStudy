@@ -168,32 +168,56 @@ spring:
 - Service - 1 . SSE 객체 생성
   - SSE 연결을 위한 `Sseemitter` 객체 생성
 
-```java
-@Log4j2
-@RequiredArgsConstructor
-@Service
-public class SseEmitterService {
-
-    private final SseEmitterRepository sseEmitterRepository;
-
-    public SseEmitter createSseEmitter(String channel) {
-        return sseEmitterRepository.save(channel);
-    }
-}    
-
-/*** =============================================================================  **/
-
-@Repository
-public class SseEmitterRepository {
-  // thread-safe한 자료구조를 사용한다.
-  private final Map<String, SseEmitter> emitters = new ConcurrentHashMap<>();
-  private Long timeout = 60L * 1000 * 60;
-
-  public SseEmitter save(String eventId) {
-    SseEmitter sseEmitter =  new SseEmitter(timeout);
-    emitters.put(eventId, sseEmitter);
-    return sseEmitter;
-  }
+  ```java
+  @Log4j2
+  @RequiredArgsConstructor
+  @Service
+  public class SseEmitterService {
   
-}
-```
+      private final SseEmitterRepository sseEmitterRepository;
+  
+      public SseEmitter createSseEmitter(String channel) {
+          return sseEmitterRepository.save(channel);
+      }
+  }    
+  
+  /*** =============================================================================  **/
+  
+  @Repository
+  public class SseEmitterRepository {
+    // thread-safe한 자료구조를 사용한다.
+    private final Map<String, SseEmitter> emitters = new ConcurrentHashMap<>();
+    private Long timeout = 60L * 1000 * 60;
+  
+    public SseEmitter save(String eventId) {
+      SseEmitter sseEmitter =  new SseEmitter(timeout);
+      emitters.put(eventId, sseEmitter);
+      return sseEmitter;
+    }
+    
+  }
+  ```
+
+- Service - 2 . 메세지 전송 최초 1회 필수
+
+  ```java
+  @Log4j2
+  @RequiredArgsConstructor
+  @Service
+  public class SseEmitterService {
+      public void sendMessage(NotificationDto data, SseEmitter sseEmitter) {
+          log.info("send to client :[{}]",  data);
+          String channel =  data.getChannel();
+          try {
+              sseEmitter.send(SseEmitter.event()
+                      .id(channel)
+                      .name("sse")
+                      .data(data, MediaType.APPLICATION_JSON));
+          } catch (IOException | IllegalStateException e) {
+              log.error("IOException | IllegalStateException is occurred. ", e);
+              // 에러가 발생할 경우 채널 삭제
+              sseEmitterRepository.deleteById(channel);
+          } // try - catch
+      }
+  }
+  ```
