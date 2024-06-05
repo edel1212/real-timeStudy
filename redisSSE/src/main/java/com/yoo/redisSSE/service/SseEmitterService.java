@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import java.io.IOException;
+import java.util.Optional;
 
 @Log4j2
 @RequiredArgsConstructor
@@ -27,8 +28,11 @@ public class SseEmitterService {
 
     public void sendNotificationToClient(NotificationDto notificationDto) {
         String accountId = notificationDto.getChannel();
-        sseEmitterRepository.findById(accountId)
-                .ifPresent(emitter -> sendMessage(notificationDto, emitter));
+        Optional<SseEmitter> optionalSseEmitter =  sseEmitterRepository.findById(accountId);
+        // 해당 Map에서 SseEmitter가 없을 경우 예외 처리
+        if(!optionalSseEmitter.isPresent()) return; 
+        // 메세지 전송
+        this.sendMessage(notificationDto, optionalSseEmitter.get());
     }
 
     public void sendMessage(NotificationDto data, SseEmitter sseEmitter) {

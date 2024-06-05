@@ -24,6 +24,8 @@ public class RedisSubscriber implements MessageListener {
     @Override
     public void onMessage(Message message, byte[] pattern) {
         try {
+            // Redis에서 저장된 Key(채널)값은 Prefix를 달아 저장했기에
+            // 해당 Prefix를 제거한 후 Map에 저장된 SS
             String channel = new String(message.getChannel())
                     .substring(channelPrefix.length());
 
@@ -32,7 +34,7 @@ public class RedisSubscriber implements MessageListener {
 
             NotificationDto notificationDto = objectMapper.readValue(message.getBody(),
                     NotificationDto.class);
-            // 클라이언트에게 event 데이터 전송
+            // 구독하고 있는 Client들에게 메세지를 전달한다.
             sseEmitterService.sendNotificationToClient(notificationDto);
         } catch (IOException e) {
             log.error("IOException is occurred. ", e);
