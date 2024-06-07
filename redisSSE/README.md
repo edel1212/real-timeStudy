@@ -229,7 +229,6 @@ spring:
         - 해당 예제에서는 `RedisSubscriber`를 구현하여 사용함
     - 채널 이름에 사용할 Prefix 지정 확정성을 위함
       - 만약 채널명을 계정명으로하면 만약 SSE 와 웹 소켓을 사용할 경우 중복될 수 도 있기 때문이다.
-  - ### RedisService
     ```java
     @RequiredArgsConstructor
     @Service
@@ -261,6 +260,47 @@ spring:
     
         private String getChannelName(String id) {
             return channelPrefix + id;
+        }
+    }
+    ```
+    
+- Service - 3.1 .ㅎ `MessageLisner` 구현체
+  - `MessageListener`는 `@FunctionalInterface`이다.
+    - `public void onMessage(Message message, byte[] pattern)`메서드 구현이 강제된다.
+  - 채널명 앞에 지정된 값을 넣어 확장성을 높임
+  - 🤣 삽질 내용
+    - `SseEmitterService`를 의존성 주입하지 않고 `NotificationServiceImpl`를 활용해서 구현하려 했다.
+      - Spring Cycle 에러 발생 .. 잘 생각해보면 당연한 결과였다 . 부르고 -> 구독 로직 -> 부른 곳 다시 호출 ..
+
+    ```java
+    @Log4j2
+    @RequiredArgsConstructor
+    @Component
+    public class RedisSubscriber implements MessageListener {
+    
+        private final ObjectMapper objectMapper;
+        private final SseEmitterService sseEmitterService;
+        @Value("${redis.ssePrefix}")
+        private String channelPrefix;
+    
+        @Override
+        public void onMessage(Message message, byte[] pattern) {
+            try {
+                // Redis에서 저장된 Key(채널)값은 Prefix를 달아 저장했기에
+                // 해당 Prefix를 제거한 후 Map에 저장된 SS
+                String channel = new String(message.getChannel())
+                        .substring(channelPrefix.length());
+    
+                log.info("channel ::: " + channel);
+                log.info("message ::: " + message.getBody().toString());
+    
+                NotificationDto notificationDto = objectMapper.readValue(message.getBody(),
+                        NotificationDto.class);
+                // 구독하고 있는 Client들에게 메세지를 전달한다.
+                sseEmitterService.sendNotificationToClient(notificationDto);
+            } catch (IOException e) {
+                log.error("IOException is occurred. ", e);
+            }
         }
     }
     ```
