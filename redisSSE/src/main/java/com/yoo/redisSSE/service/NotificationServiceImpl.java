@@ -40,9 +40,13 @@ public class NotificationServiceImpl{
     }
 
 
-    public void sendNotification(String accountId, String message) {
+    public void sendNotification(String channel, String message) {
+        NotificationDto data = NotificationDto.builder()
+                .channel(channel)
+                .message(message)
+                .build();
         // redis 이벤트 발행
-        redisMessageService.publish(accountId, NotificationDto.builder().channel(accountId).message(message).build());
+        redisMessageService.publish(channel, data);
     }
 
 }

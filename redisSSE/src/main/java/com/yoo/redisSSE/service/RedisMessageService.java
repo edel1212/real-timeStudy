@@ -36,7 +36,9 @@ public class RedisMessageService {
         container.addMessageListener(subscriber, ChannelTopic.of(getChannelName(channel)));
     }
 
-    // 이벤트 발행
+    /**
+     * Reids에 저장된 채널에 이벤트 발행
+     * */
     public void publish(String channel, NotificationDto notificationDto) {
         redisTemplate.convertAndSend(getChannelName(channel), notificationDto);
     }
