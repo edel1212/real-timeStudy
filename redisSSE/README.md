@@ -264,9 +264,10 @@ spring:
     }
     ```
     
-- Service - 3.1 .ㅎ `MessageLisner` 구현체
+- Service - 3.1 . `MessageLisner` 구현체
   - `MessageListener`는 `@FunctionalInterface`이다.
     - `public void onMessage(Message message, byte[] pattern)`메서드 구현이 강제된다.
+  - 첫 구독에는 굳이 Client가 없기에 `sendNotificationToClient()`가 불필요하다 생각하겠지만 해당 리스너를 통해 이후에도 메세지를  전달할 경우 사용한다는 것을 기억하자
   - 채널명 앞에 지정된 값을 넣어 확장성을 높임
   - 🤣 삽질 내용
     - `SseEmitterService`를 의존성 주입하지 않고 `NotificationServiceImpl`를 활용해서 구현하려 했다.
@@ -304,3 +305,39 @@ spring:
         }
     }
     ```
+
+- Service - 3.2 . 구독하고 있는 Client 에게 메세지 전달을 위함
+  ```java
+  @Log4j2
+  @RequiredArgsConstructor
+  @Service
+  public class SseEmitterService {
+  
+      private final SseEmitterRepository sseEmitterRepository;
+  
+      public void sendNotificationToClient(NotificationDto notificationDto) {
+          String accountId = notificationDto.getChannel();
+          Optional<SseEmitter> optionalSseEmitter = sseEmitterRepository.findById(accountId);
+          // 해당 Map에서 SseEmitter가 없을 경우 예외 처리
+          if (!optionalSseEmitter.isPresent()) return;
+          // 메세지 전송
+          this.sendMessage(notificationDto, optionalSseEmitter.get());
+      }
+  }   
+  ```
+
+- Service - 3.3 . `SseEmitter` 객체 존제 확인
+  ```java
+  @Repository
+  public class SseEmitterRepository {
+      // thread-safe한 자료구조를 사용한다.
+      private final Map<String, SseEmitter> emitters = new ConcurrentHashMap<>();
+      public Optional<SseEmitter> findById(String memberId) {
+          return Optional.ofNullable(emitters.get(memberId));
+      }
+  }
+  ```
+  
+- Service - 4 . SSE 성공 및 실패 처리
+  - 기존 Redis의 저장 내용과 Map에 저장되어 있는 내용을 삭제 하는 간단한 로직이기에 스킵함
+    - 필요할 경우 Git 확인
