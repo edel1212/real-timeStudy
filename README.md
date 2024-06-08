@@ -36,7 +36,7 @@
   - [이동](https://github.com/edel1212/real-timeStudy/tree/main/simpleSSE)
 - Redis를 사용하여 `SseEmitter`을 저장하여 구현
   - 구현은 복잡 하지만 확장성이 높아진다.
-  - 이동
+  - [이동](https://github.com/edel1212/real-timeStudy/tree/main/redisSSE)
 
 
 
