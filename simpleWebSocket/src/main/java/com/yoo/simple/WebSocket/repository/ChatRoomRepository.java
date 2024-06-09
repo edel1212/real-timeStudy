@@ -25,14 +25,15 @@ public class ChatRoomRepository {
         return chatRoomMap.get(id);
     }
 
-    public ChatRoom createChatRoom(String name) {
+    //
+    public ChatRoom createChatRoom(String roomName) {
         String roomId = UUID.randomUUID().toString();
         log.info("-----------");
         log.info("roomId ::: {}",roomId);
         log.info("-----------");
         ChatRoom chatRoom = ChatRoom.builder()
                 .roomId(roomId)
-                .name(name)
+                .name(roomName)
                 .build();
         chatRoomMap.put(roomId, chatRoom);
         return chatRoom;
