@@ -3,6 +3,8 @@ package com.yoo.simple.WebSocket.controller;
 import com.yoo.simple.WebSocket.dto.ChatRoom;
 import com.yoo.simple.WebSocket.repository.ChatRoomRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.log4j.Log4j2;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -11,6 +13,7 @@ import java.util.List;
 /**
  * ✅ 채팅 방을 관리하는 Controller 이다
  * */
+@Log4j2
 @RequiredArgsConstructor
 @RestController
 @RequestMapping("/chat")
@@ -26,11 +29,10 @@ public class ChatRoomController {
     }
 
     // 채팅방 생성
-    @PostMapping("/room")
-    public ChatRoom createRoom(String roomName) {
+    @PostMapping(value = "/room/{roomName}")
+    public ChatRoom createRoom(@PathVariable String roomName) {
         return chatRoomRepository.createChatRoom(roomName);
     }
-
 
     // 특정 채팅방 조회
     @GetMapping("/room/{roomId}")
