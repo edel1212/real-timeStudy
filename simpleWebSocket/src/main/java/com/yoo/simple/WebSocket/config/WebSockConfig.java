@@ -32,8 +32,11 @@ public class WebSockConfig implements WebSocketMessageBrokerConfigurer {
         // ws://<서버 주소>/ws-stomp로 WebSocket 연결을 시도할 수 있습니다.
         registry.addEndpoint("/ws-stomp")
                 // CORS(Cross-Origin Resource Sharing) 정책을 설정합니다
-                .setAllowedOrigins("http://localhost:8080", "http://localhost:8081", "http://127.0.0.1:5500")
+                //.setAllowedOrigins("http://localhost:8080", "http://localhost:8081", "http://127.0.0.1:5500")
+                .setAllowedOriginPatterns("*")
                 // WebSocket을 지원하지 않는 브라우저에서도 STOMP 프로토콜을 사용할 수 있도록 SockJS 폴백(fallback) 옵션을 활성화합니다.
-                .withSockJS();
+                // 삽질 추가 .. -> javascript 확인 시 아래 옵션을 끄면 Cors 에러가 뜬다 .. 왜지 ..
+                .withSockJS()
+        ;
     }
 }
