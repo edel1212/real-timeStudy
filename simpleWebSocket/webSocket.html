@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Chat Application</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+      }
+      .chat-container {
+        max-width: 600px;
+        margin: 0 auto;
+      }
+      .chat-room {
+        margin-bottom: 20px;
+      }
+      .chat-messages {
+        border: 1px solid #ccc;
+        height: 300px;
+        overflow-y: scroll;
+        padding: 10px;
+      }
+      .chat-message {
+        margin-bottom: 10px;
+      }
+      .chat-room-list {
+        margin-bottom: 20px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="chat-container">
+      <h1>Chat Application</h1>
+
+      <!-- Create Chat Room -->
+      <div class="chat-room">
+        <h2>Create Chat Room</h2>
+        <input type="text" id="roomNameInput" placeholder="Room Name" />
+        <button onclick="createRoom()">Create Room</button>
+      </div>
+
+      <!-- List of Chat Rooms -->
+      <div class="chat-room-list">
+        <h2>Chat Rooms</h2>
+        <ul id="roomsList"></ul>
+      </div>
+      
+<!-- Chat Room Messages -->
+<div class="chat-room">
+  <h2>Chat Room Messages</h2>
+  <input type="text" id="roomIdInput" placeholder="Room ID" />
+  <input type="text" id="nicknameInput" placeholder="Nickname" />
+  <button onclick="connectToRoom()">Join Room</button>
+  <div id="chatMessages" class="chat-messages"></div>
+  <input type="text" id="messageInput" placeholder="Enter your message" />
+  <button onclick="sendMessage()">Send Message</button>
+</div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.5.2/sockjs.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
+    <script>
+      let stompClient = null;
+      let currentRoomId = null;
+      function createRoom() {
+        const roomName = document.getElementById("roomNameInput").value;
+
+        fetch("http://localhost:8080/chat/room/" + roomName, {
+          method: "POST",
+        })
+          .then((response) => {
+            if (!response.ok) {
+              throw new Error(
+                "Network response was not ok " + response.statusText
+              );
+            }
+            return response.json();
+          })
+          .then((room) => {
+            alert("Room Created: " + room.roomId);
+            loadChatRooms();
+          })
+          .catch((error) => {
+            console.error(
+              "There was a problem with the fetch operation:",
+              error
+            );
+          });
+      }
+
+      function loadChatRooms() {
+        fetch("http://localhost:8080/chat/rooms")
+          .then((response) => response.json())
+          .then((rooms) => {
+            const roomsList = document.getElementById("roomsList");
+            roomsList.innerHTML = "";
+            rooms.forEach((room) => {
+              const li = document.createElement("li");
+              li.textContent = room.name + " (" + room.roomId + ")";
+              roomsList.appendChild(li);
+            });
+          });
+      }
+
+      function connectToRoom() {
+
+        const roomId = document.getElementById("roomIdInput").value;
+        const nickname = document.getElementById("nicknameInput").value; // 닉네임을 가져옵니다.
+
+        if (stompClient !== null) {
+          stompClient.disconnect();
+        }
+
+        const socket = new SockJS("http://localhost:8080/ws-stomp");
+        stompClient = Stomp.over(socket);
+
+        stompClient.connect({}, function (frame) {
+          console.log("Connected: " + frame);
+          currentRoomId = roomId;
+          stompClient.subscribe("/sub/chat/room/" + roomId, function (message) {
+            showMessage(JSON.parse(message.body));
+          });
+        });
+
+        // 사용자의 닉네임을 출력합니다.
+        const messagesDiv = document.getElementById("chatMessages");
+        const nicknameElement = document.createElement("div");
+        nicknameElement.className = "chat-message";
+        nicknameElement.textContent = "You joined as: " + nickname; // 사용자의 닉네임을 출력합니다.
+        messagesDiv.appendChild(nicknameElement);
+        messagesDiv.scrollTop = messagesDiv.scrollHeight;
+      }
+
+      function showMessage(message) {
+        const messagesDiv = document.getElementById("chatMessages");
+        const messageElement = document.createElement("div");
+        messageElement.className = "chat-message";
+        messageElement.textContent = message.sender + ": " + message.message;
+        messagesDiv.appendChild(messageElement);
+        messagesDiv.scrollTop = messagesDiv.scrollHeight;
+      }
+
+      function sendMessage() {
+        const message = document.getElementById("messageInput").value;
+        const nickname = document.getElementById("nicknameInput").value;
+        if (message && stompClient && currentRoomId) {
+          const body = {
+            roomId: currentRoomId,
+            sender: nickname, 
+            message,
+          };
+          stompClient.send("/pub/chat/message", {}, JSON.stringify(body));
+          document.getElementById("messageInput").value = "";
+        }
+      }
+
+      document.addEventListener("DOMContentLoaded", (event) => {
+        loadChatRooms();
+      });
+    </script>
+  </body>
+</html>
