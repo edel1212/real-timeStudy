@@ -138,4 +138,63 @@
         }
     }
     ```
-    
+  - Client 
+    - Javascript 기반으로 테스트 함
+  ```html
+  <script>
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.5.2/sockjs.min.js"></script>
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
+      const socket = new SockJS("http://localhost:8080/ws-stomp");
+      const stompClient = Stomp.over(socket);
+  </script>
+  ```
+
+- #### 구독 요청
+  - ℹ️ 주의
+    - `연결 (Hand-Shake)`이 성공된 상태에서 진행 되어야한다.
+    - CORS 설정이 완료 되어야한다.
+  - 설정 파일
+    ```java
+    @Configuration
+    //  웹소켓 활성화
+    @EnableWebSocketMessageBroker
+    public class WebSockConfig implements WebSocketMessageBrokerConfigurer {
+       /**
+       * WebSocket 메시징을 설정할 때 호출됩니다. 주로 메시지 브로커의 설정을 담당
+       * */
+      @Override
+      public void configureMessageBroker(MessageBrokerRegistry registry) {
+          //  메모리 기반 메시지 브로커를 활성화
+          // /sub로 시작하는 목적지로 클라이언트가 구독한 경우 이 브로커가 메시지를 처리합니다.
+          registry.enableSimpleBroker("/sub");
+      }
+    }
+    ```
+  - Client    
+    - 내장 `subscribe()`를 사용
+      - 인자값 순서대로
+        - 1 . 목적지 : `/sub/**/` 와 같이 상단에 설정한 브로커 주소로 시작되게 지정한다.
+          - 해당 ID를 통해 방을 만들고 B,C,... 와 같은 사용자하 해당 식별키를 통해 방에 접속한다.
+        - 2 . `convertAndSend()`를 통해 넘어온 값을 처리하는 로직이다
+          - 쉽게 설명하면 구독 후 메세지가 왔을 경우 처리할 비즈니스 로직이다.
+    ```html
+    <script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.5.2/sockjs.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
+        const socket = new SockJS("http://localhost:8080/ws-stomp");
+        const stompClient = Stomp.over(socket);
+        // stompClient 내 함수를 통해 연결 요청
+        stompClient.connect({}, function (frame) {
+          console.log("Connected: " + frame);
+          let currentRoomId = roomId; // 식별할 ID를 지정
+          /** 
+          * ✅ 구독 요청
+          *    - /sub 로 시작하는 Path가 포인트이다.
+          *       - 식별키 로 지정된 목적지를 통해 메세지를 주고 받는다 
+          */
+          stompClient.subscribe("/sub/chat/room/" + roomId, function (message) {
+            showMessage(JSON.parse(message.body));
+          });
+        });
+    </script>
+    ```    
