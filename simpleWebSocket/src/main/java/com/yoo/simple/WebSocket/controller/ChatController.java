@@ -21,6 +21,8 @@ public class ChatController {
     /**
      * ✅ MessageMapping 어노테이션을 사용한다.
      * - 입장, 글쓰기 모두 이곳을 통해 전달 된다.
+     * - 앞에 설정한 prefix가 붙어야 전달된다. {@link com.yoo.simple.WebSocket.config.WebSockConfig }
+     *
      * */
     @MessageMapping("/chat/message")
     //@SendTo("구독 주소") // ℹ️ 해당 메서드를 타면 지정 구독자들에게 같은 메세지가 전달 가능하다.
