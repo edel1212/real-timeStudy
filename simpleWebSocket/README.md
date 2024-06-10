@@ -142,8 +142,6 @@
     - Javascript 기반으로 테스트 함
   ```html
   <script>
-      //<script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.5.2/sockjs.min.js"></script>
-      //<script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
       const socket = new SockJS("http://localhost:8080/ws-stomp");
       const stompClient = Stomp.over(socket);
   </script>
@@ -179,8 +177,6 @@
           - 쉽게 설명하면 구독 후 메세지가 왔을 경우 처리할 비즈니스 로직이다.
     ```html
     <script>
-        //<script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.5.2/sockjs.min.js"></script>
-        //<script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
         const socket = new SockJS("http://localhost:8080/ws-stomp");
         const stompClient = Stomp.over(socket);
        /**
