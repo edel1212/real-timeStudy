@@ -26,6 +26,13 @@
 
 ### 흐름별 코드
 
+- #### 의존설 설정
+  ```groovy
+  dependencies {
+      implementation 'org.springframework.boot:spring-boot-starter-websocket'
+  }
+  ```
+
 - #### 방 생성
   - Controller 
     - 간단한 예제로 제작 하였기에 `@PathVariable`사용
@@ -92,3 +99,43 @@
 
 - #### 조회
   - 단순 코드기에 Skip 필요 시 Git 코드 확인
+
+- #### 연결 (Hand-Shake)
+  - 소켓 설정이 필요하기에 `WebSocketMessageBrokerConfigurer`를 구현할 클래스를 만들어주자.
+    - WebSocket STOMP end-point를 등록하기 위해 `void registerStompEndpoints(~)`를 구현
+      - 해당 end-point로 연결을 요청한다.
+  - ℹ️ 중요
+    - 웹 소켓 활성화를 위한 `@EnableWebSocketMessageBroker` 지정
+    - 설정 파일이므로 `@Configuration` 지정
+    - `setAllowedOriginPatterns("*")` 설정을 통해 CORS 방지가 필요하다.
+      - `setAllowedOrigins()`를 사용할 경우 배열 형태로 지정 가능 단! **"*"** 가 사용이 불가능함
+        - `//.setAllowedOrigins("http://localhost:8080", "http://localhost:8081", "http://127.0.0.1:5500")`
+    - PostMan을 통해 Connection 확인이 필요할 경우 `withSockJS()` 옵션을 제거 해야함 
+      - `//.withSockJS()` 
+      - 😱 Javascript를 통해 연결 할 경우에는 `withSockJS()`가 없으면 CORS 에러가 발생 이상하다 ..
+  - 설정 파일
+    - `WebSocketMessageBrokerConfigurer`를 구현한 Class
+      - 구현이 강제되는 메서드는 없다. 
+        - 전부 `default method`로 구현되어 있음
+    ```java
+    @Configuration
+    //  웹소켓 활성화
+    @EnableWebSocketMessageBroker
+    public class WebSockConfig implements WebSocketMessageBrokerConfigurer {
+        /**
+         * WebSocket STOMP end-point 지정
+         * */
+        @Override
+        public void registerStompEndpoints(StompEndpointRegistry registry) {
+            // 이 URL로 WebSocket 연결을 시작하게 됩니다
+            // ws://<서버 주소>/ws-stomp로 WebSocket 연결을 시도할 수 있습니다.
+            registry.addEndpoint("/ws-stomp")
+                    // CORS(Cross-Origin Resource Sharing) 정책을 설정합니다
+                    .setAllowedOriginPatterns("*")
+                    // WebSocket을 지원하지 않는 브라우저에서도 STOMP 프로토콜을 사용할 수 있도록 SockJS 폴백(fallback) 옵션을 활성화합니다.
+                    .withSockJS()
+            ;
+        }
+    }
+    ```
+    
