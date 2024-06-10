@@ -26,6 +26,13 @@
 
 ### 흐름별 코드
 
+- #### 의존설 설정
+  ```groovy
+  dependencies {
+      implementation 'org.springframework.boot:spring-boot-starter-websocket'
+  }
+  ```
+
 - #### 방 생성
   - Controller 
     - 간단한 예제로 제작 하였기에 `@PathVariable`사용
@@ -92,3 +99,102 @@
 
 - #### 조회
   - 단순 코드기에 Skip 필요 시 Git 코드 확인
+
+- #### 연결 (Hand-Shake)
+  - 소켓 설정이 필요하기에 `WebSocketMessageBrokerConfigurer`를 구현할 클래스를 만들어주자.
+    - WebSocket STOMP end-point를 등록하기 위해 `void registerStompEndpoints(~)`를 구현
+      - 해당 end-point로 연결을 요청한다.
+  - ℹ️ 중요
+    - 웹 소켓 활성화를 위한 `@EnableWebSocketMessageBroker` 지정
+    - 설정 파일이므로 `@Configuration` 지정
+    - `setAllowedOriginPatterns("*")` 설정을 통해 CORS 방지가 필요하다.
+      - `setAllowedOrigins()`를 사용할 경우 배열 형태로 지정 가능 단! **"*"** 가 사용이 불가능함
+        - `//.setAllowedOrigins("http://localhost:8080", "http://localhost:8081", "http://127.0.0.1:5500")`
+    - PostMan을 통해 Connection 확인이 필요할 경우 `withSockJS()` 옵션을 제거 해야함 
+      - `//.withSockJS()` 
+      - 😱 Javascript를 통해 연결 할 경우에는 `withSockJS()`가 없으면 CORS 에러가 발생 이상하다 ..
+  - 설정 파일
+    - `WebSocketMessageBrokerConfigurer`를 구현한 Class
+      - 구현이 강제되는 메서드는 없다. 
+        - 전부 `default method`로 구현되어 있음
+    ```java
+    @Configuration
+    //  웹소켓 활성화
+    @EnableWebSocketMessageBroker
+    public class WebSockConfig implements WebSocketMessageBrokerConfigurer {
+        /**
+         * WebSocket STOMP end-point 지정
+         * */
+        @Override
+        public void registerStompEndpoints(StompEndpointRegistry registry) {
+            // 이 URL로 WebSocket 연결을 시작하게 됩니다
+            // ws://<서버 주소>/ws-stomp로 WebSocket 연결을 시도할 수 있습니다.
+            registry.addEndpoint("/ws-stomp")
+                    // CORS(Cross-Origin Resource Sharing) 정책을 설정합니다
+                    .setAllowedOriginPatterns("*")
+                    // WebSocket을 지원하지 않는 브라우저에서도 STOMP 프로토콜을 사용할 수 있도록 SockJS 폴백(fallback) 옵션을 활성화합니다.
+                    .withSockJS()
+            ;
+        }
+    }
+    ```
+  - Client 
+    - Javascript 기반으로 테스트 함
+  ```html
+  <script>
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.5.2/sockjs.min.js"></script>
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
+      const socket = new SockJS("http://localhost:8080/ws-stomp");
+      const stompClient = Stomp.over(socket);
+  </script>
+  ```
+
+- #### 구독 요청
+  - ℹ️ 주의
+    - `연결 (Hand-Shake)`이 성공된 상태에서 진행 되어야한다.
+    - CORS 설정이 완료 되어야한다.
+  - 설정 파일
+    ```java
+    @Configuration
+    //  웹소켓 활성화
+    @EnableWebSocketMessageBroker
+    public class WebSockConfig implements WebSocketMessageBrokerConfigurer {
+       /**
+       * WebSocket 메시징을 설정할 때 호출됩니다. 주로 메시지 브로커의 설정을 담당
+       * */
+      @Override
+      public void configureMessageBroker(MessageBrokerRegistry registry) {
+          //  메모리 기반 메시지 브로커를 활성화
+          // /sub로 시작하는 목적지로 클라이언트가 구독한 경우 이 브로커가 메시지를 처리합니다.
+          registry.enableSimpleBroker("/sub");
+      }
+    }
+    ```
+  - Client    
+    - 내장 `subscribe()`를 사용
+      - 인자값 순서대로
+        - 1 . 목적지 : `/sub/**/` 와 같이 상단에 설정한 브로커 주소로 시작되게 지정한다.
+          - 해당 ID를 통해 방을 만들고 B,C,... 와 같은 사용자하 해당 식별키를 통해 방에 접속한다.
+        - 2 . `convertAndSend()`를 통해 넘어온 값을 처리하는 로직이다
+          - 쉽게 설명하면 구독 후 메세지가 왔을 경우 처리할 비즈니스 로직이다.
+    ```html
+    <script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.5.2/sockjs.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
+        const socket = new SockJS("http://localhost:8080/ws-stomp");
+        const stompClient = Stomp.over(socket);
+        // stompClient 내 함수를 통해 연결 요청
+        stompClient.connect({}, function (frame) {
+          console.log("Connected: " + frame);
+          let currentRoomId = roomId; // 식별할 ID를 지정
+          /** 
+          * ✅ 구독 요청
+          *    - /sub 로 시작하는 Path가 포인트이다.
+          *       - 식별키 로 지정된 목적지를 통해 메세지를 주고 받는다 
+          */
+          stompClient.subscribe("/sub/chat/room/" + roomId, function (message) {
+            showMessage(JSON.parse(message.body));
+          });
+        });
+    </script>
+    ```    
