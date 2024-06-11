@@ -341,3 +341,69 @@ spring:
 - Service - 4 . SSE 성공 및 실패 처리
   - 기존 Redis의 저장 내용과 Map에 저장되어 있는 내용을 삭제 하는 간단한 로직이기에 스킵함
     - 필요할 경우 Git 확인
+
+### 흐름 코드 - 메세지 전송(퍼블리싱)
+
+- Controller
+
+  ```java
+  @RestController
+  @RequiredArgsConstructor
+  public class NotificationController {
+      private final NotificationServiceImpl notificationService;
+  
+      @PostMapping(value = "/send-data", produces = MediaType.APPLICATION_FORM_URLENCODED_VALUE)
+      public void sendData(String channel, String message) {
+          notificationService.sendNotification(channel, message);
+      }
+  }
+  ```
+  
+- Service - 1 . Redis Publishing
+
+  ```java
+  @Service
+  @Log4j2
+  @RequiredArgsConstructor
+  public class NotificationServiceImpl{
+      private final RedisMessageService redisMessageService;
+  
+      public void sendNotification(String channel, String message) {
+          NotificationDto data = NotificationDto.builder()
+                  .channel(channel)
+                  .message(message)
+                  .build();
+          // redis 이벤트 발행
+          redisMessageService.publish(channel, data);
+      }
+  }
+  ```
+
+- Service - 2 . 구독 식별키에 맞춰 발송
+  - 추가 설명 어째서 `convertAndSend(식별키, 전송 데이터);`만으로 알림이 전송 가능 이유
+    - `MessageListener`를 구현한 `void onMessage()`메서드안에서 해당 Key를 통해 SSeEmitter를 구하는 로직이 있기 때문이다.
+      - 그럼 왜? Redis에 **SSE객체를 저장**하면 되잖아? 라면 Redis에 **너무 복잡한 Object를 저장할 수 없기** 때문이다.
+
+  ```java
+  @RequiredArgsConstructor
+  @Service
+  public class RedisMessageService {
+      // 채널에 사용할 Prefix - 강제는 아니다 SSE 이외 다양하게 RedisMessageListenerContainer를 사용하기 위함
+      @Value("${redis.ssePrefix}")
+      private String channelPrefix;
+      
+      private final RedisTemplate<String, Object> redisTemplate;
+  
+      /**
+       * Reids에 저장된 채널에 이벤트 발행
+       * */
+      public void publish(String channel, NotificationDto notificationDto) {
+          redisTemplate.convertAndSend(getChannelName(channel), notificationDto);
+      }
+  
+      private String getChannelName(String id) {
+          return channelPrefix + id;
+      }
+  }
+  ```
+
