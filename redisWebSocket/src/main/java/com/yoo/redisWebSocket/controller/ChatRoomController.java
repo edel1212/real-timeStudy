@@ -30,9 +30,7 @@ public class ChatRoomController {
     // 채팅방 생성
     @PostMapping(value = "/room/{roomName}")
     public ChatRoom createRoom(@PathVariable String roomName) {
-        log.info("--------------");
         return chatRoomRepository.createChatRoom(roomName);
     }
-
 
 }

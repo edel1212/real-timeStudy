@@ -17,13 +17,13 @@ import java.util.concurrent.ConcurrentHashMap;
 @RequiredArgsConstructor
 public class ChatRoomRepository {
 
+    @Value("${redis.ssePrefix}")
+    private String channelPrefix;
+
     // DB 대신 사용 중
     private final Map<String, ChatRoom> chatRoomMap = new ConcurrentHashMap<>();
     private final RedisMessageListenerContainer container;
     private final RedisSubscriber subscriber;
-
-    @Value("${redis.ssePrefix}")
-    private String channelPrefix;
 
 
     public List<ChatRoom> findAllRoom() {
@@ -33,22 +33,25 @@ public class ChatRoomRepository {
         return chatRooms;
     }
 
+    /**
+     * 채팅방 생성
+     *  - redis에 구독
+     */
     public ChatRoom createChatRoom(String roomName) {
+        // 1 . UUID 생성 
         String roomId = UUID.randomUUID().toString();
+        // 2 . 메세지 생성
         ChatRoom chatRoom = ChatRoom.builder()
                 .roomId(roomId)
                 .name(roomName)
                 .build();
-        // DB 대신 목록 생성을 위한 Map임
+        // 3 . TODO DB 대신 목록 생성을 위한 Map임 ::: 실제 로직 경우 dummy.save(~); 구현
         chatRoomMap.put(roomId, chatRoom);
-
-        // 구독
-        container.addMessageListener(subscriber, ChannelTopic.of(getChannelName(roomId)));
+        // 4 . Redis에 저장할 Topic명(식별키) 생성
+        ChannelTopic channelTopic = ChannelTopic.of( channelPrefix + roomId);
+        // 5 . 구독
+        container.addMessageListener(subscriber, channelTopic);
 
         return chatRoom;
-    }
-
-    private String getChannelName(String id) {
-        return channelPrefix + id;
     }
 }

@@ -18,6 +18,7 @@ import java.io.IOException;
 public class RedisSubscriber implements MessageListener {
 
     private final ObjectMapper objectMapper;
+    // STOMP 주입
     private final SimpMessageSendingOperations messagingTemplate;
     @Value("${redis.ssePrefix}")
     private String channelPrefix;
@@ -25,17 +26,17 @@ public class RedisSubscriber implements MessageListener {
     @Override
     public void onMessage(Message message, byte[] pattern) {
         try {
-            // Redis에서 저장된 Key(채널)값은 Prefix를 달아 저장했기에
-            // 해당 Prefix를 제거한 후 Map에 저장된 SS
+            // 1 . Redis에서만 사용했던 prefix 제거
             String channel = new String(message.getChannel())
                     .substring(channelPrefix.length());
 
-            log.info("channel ::: " + channel);
-            log.info("message ::: " + message.getBody().toString());
-
+            log.info("channel ::: {}  ",channel);
+            
+            // 2 . RedisValue -> JavaObject 변환
             ChatMessage chatMessage = objectMapper.readValue(message.getBody(),
                     ChatMessage.class);
 
+            // 3 . 구독자들에게 Emit
             messagingTemplate.convertAndSend("/sub/chat/room/" + channel, chatMessage);
 
         } catch (IOException e) {
