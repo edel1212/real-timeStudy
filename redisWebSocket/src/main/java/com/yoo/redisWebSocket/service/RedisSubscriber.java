@@ -23,6 +23,9 @@ public class RedisSubscriber implements MessageListener {
     @Value("${redis.ssePrefix}")
     private String channelPrefix;
 
+    /**
+     * 구독자들에게 <pre>convertAndSend() 시</pre> 사용 될 메서드
+     * */
     @Override
     public void onMessage(Message message, byte[] pattern) {
         try {
@@ -36,7 +39,7 @@ public class RedisSubscriber implements MessageListener {
             ChatMessage chatMessage = objectMapper.readValue(message.getBody(),
                     ChatMessage.class);
 
-            // 3 . 구독자들에게 Emit
+            // 3 . 구독자들에게 Stomp를 사용해서 메세지 전송
             messagingTemplate.convertAndSend("/sub/chat/room/" + channel, chatMessage);
 
         } catch (IOException e) {
