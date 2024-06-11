@@ -407,3 +407,49 @@ spring:
   }
   ```
 
+- etc - 흐름 메세지 전송 로직 도움 코드
+
+  ```java
+  public class RedisMessageService {
+      private final RedisSubscriber subscriber;
+      // Code...
+      public void subscribe(String channel) {
+          // ℹ️ 구독 시 주입하는 subscriber(MessageListener)가 포인트다
+          container.addMessageListener(subscriber, ChannelTopic.of(getChannelName(channel)));
+      }
+  }
+  
+  /**************************************************************************************/
+  
+  public class RedisSubscriber implements MessageListener {
+    // Code...
+    private final SseEmitterService sseEmitterService;
+  
+    @Override
+    public void onMessage(Message message, byte[] pattern) {
+      try {
+  
+        // ℹ️ 포인트
+        sseEmitterService.sendNotificationToClient(notificationDto);
+      } catch (IOException e) { }
+    }
+  }
+  
+  /**************************************************************************************/
+  
+  public class SseEmitterService {
+      // Code...
+      private final SseEmitterRepository sseEmitterRepository;
+  
+      public void sendNotificationToClient(NotificationDto notificationDto) {
+          // 1 . 받아온 데이터 기준으로 채널명을 가져옴
+          String accountId = notificationDto.getChannel();
+          // 2 . 저장되어있는 SSE 객체를 가져온다  << 해당 코드를 통해 SSE객체를 가져올 수 있었던 것이다
+          Optional<SseEmitter> optionalSseEmitter = sseEmitterRepository.findById(accountId);
+          // 3 . 해당 Map에서 SseEmitter가 없을 경우 예외 처리
+          if (!optionalSseEmitter.isPresent()) return;
+          // 4 . 메세지 전송
+          this.sendMessage(notificationDto, optionalSseEmitter.get());
+      }
+  }  
+  ```
