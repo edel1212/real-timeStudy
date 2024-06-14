@@ -191,3 +191,18 @@
     }
     </script>
     ```
+
+
+### 간단 요약
+
+- 1 . 사용자 A가 채팅방을 생성
+  - `UUID`를 통해 해당 방의 `RoomID` 생성
+    - `RooID`를 통해 Redis에 구독한다.
+      - ℹ️ 중요 포인트) 구독을 하면서 해당 구독자들에서 발행할 때 실행할 메서드를 지정
+        - ` messagingTemplate.convertAndSend("/sub/chat/room/" + roomId, 메세지 객체 );` 를 내부에 심어 넣음
+- 2 . 사용자들은 A가 생성한 방에 참가
+  - `stompClient.subscribe("/sub/chat/room/" + roomId, (msg)=> /** 실행 로직 */ );`
+    - ℹ️ 중요 포인트) 해당 방에 참가하면서 STOMP객체와 연결된다
+- 3 . 사용자 D가 메세지 발송
+  - Redis의 Publishing 함수를 사용 구독자들에게 해당 메세지 발송
+    - (1)에서 기술한 내부에 심어 넣은 ` messagingTemplate.convertAndSend("/sub/chat/room/" + roomId, 메세지 객체 );` 실행으로 구독자들에게 메세지가 전달 된다.
