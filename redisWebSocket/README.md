@@ -172,6 +172,7 @@
     ```
   - Client
     ```html
+    <script>
     function sendMessage() {
       const message = document.getElementById("messageInput").value;
       const nickname = document.getElementById("nicknameInput").value;
@@ -188,4 +189,5 @@
         document.getElementById("messageInput").value = "";
       }
     }
+    </script>
     ```
