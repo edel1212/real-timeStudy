@@ -92,17 +92,21 @@
   - Redis를 사용하여 `SseEmitter`을 저장하여 구현
     - 구현은 복잡 하지만 확장성이 높아진다.
     - [이동](https://github.com/edel1212/real-timeStudy/tree/main/redisSSE)
-- WebSocket(STOMP)
-  - Map을 사용해서 메모리에 저장
-    - 구현은 간단 하지만 확장성이 떨어진다.
-    - [이동](https://github.com/edel1212/real-timeStudy/blob/main/simpleWebSocket)
-  - Redis를 사용하여 구현
-    - 구현은 복잡 하지만 확장성이 높아진다.
-      - `sub / pub` 개념을 사용하여 scale-out이 가능하나 Redis의 특징으로 pub 시 데이터가 유실된다.
-        - 읽기 않은 메세지 처리와 같은 기능이 불가능함
-        - 모든 구독자에게 메세지는 전송되나 구독을 하지 않으면 해당 정보를 받을 수 없음
-        -  이해를 돕기 위한 쉬운 예로 Tv 프로그램을 생각하면된다
-          - Tv는 바로바로 구독자들에세 영상을 송출함   
-    - [이동](https://github.com/edel1212/real-timeStudy/blob/main/redisWebSocket)
+- WebSocket
+  - Only SocketJs
+    > STOMP를 메인으로 하기에 Redis 관련 구현 X
+    - [이동](https://github.com/edel1212/real-timeStudy/blob/main/webSocketStudy)
+  - STOMP
+    - Map을 사용해서 메모리에 저장
+      - 구현은 간단 하지만 확장성이 떨어진다.
+      - [이동](https://github.com/edel1212/real-timeStudy/blob/main/simpleWebSocket)
+    - Redis를 사용하여 구현
+      - 구현은 복잡 하지만 확장성이 높아진다.
+        - `sub / pub` 개념을 사용하여 scale-out이 가능하나 Redis의 특징으로 pub 시 데이터가 유실된다.
+          - 읽기 않은 메세지 처리와 같은 기능이 불가능함
+          - 모든 구독자에게 메세지는 전송되나 구독을 하지 않으면 해당 정보를 받을 수 없음
+          -  이해를 돕기 위한 쉬운 예로 Tv 프로그램을 생각하면된다
+            - Tv는 바로바로 구독자들에세 영상을 송출함   
+      - [이동](https://github.com/edel1212/real-timeStudy/blob/main/redisWebSocket)
 
 
